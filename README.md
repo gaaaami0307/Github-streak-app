@@ -1,18 +1,132 @@
-# Github-streak-app
-Githubのコミット状況などをトラッキングしてモチベーションを上げるアプリです。（仮）
+# 🔥 GitHub Streak App
 
-App that tracks your GitHub commits and other activity to help boost your motivation. (Working title)
+> GitHubのコミット状況をトラッキングして、毎日のモチベーションを上げるアプリ。（開発中）
+> An app that tracks your GitHub commit activity to keep your daily motivation burning. (WIP)
 
-### ⚒️技術構成 / Technical Architecture
+---
+
+## 📖 概要 / Overview
+
+**日本語**
+
+GitHub OAuth認証でログインすると、自分の全リポジトリにわたるコミット履歴を取得し、連続コミット日数（ストリーク）を可視化します。「今日もコードを書いた」という積み重ねをモチベーションに変えることをコンセプトにしています。
+
+**English**
+
+Log in with GitHub OAuth to fetch your commit history across all repositories and visualize your streak — the number of consecutive days you've made a commit. The concept is simple: turn the habit of writing code every day into motivation.
+
+---
+
+## ✨ 主な機能 / Features
+
+| 機能 / Feature | 説明 / Description |
+|---|---|
+| 🔐 GitHub OAuth ログイン | 本人確認済みのユーザーのみAPIアクセス可能 / Only authenticated users can access the API |
+| 🔥 ストリーク表示 | 連続コミット日数をリアルタイムで表示 / Display consecutive commit days in real time |
+| 📊 コミット履歴の可視化 | 全リポジトリのコミットを集計して表示 / Aggregate and visualize commits across all repos |
+| 🛡️ DoS対策 | OAuthトークン単位でAPIアクセスを制御 / API access controlled per OAuth token |
+
+---
+
+## 🏗️ 技術構成 / Tech Stack
+
+### フロントエンド / Frontend
 <p align="left">
-<フロントエンド / Frontend> <img src="https://img.shields.io/badge/HTML5-EF642D?style=for-the-badge&logo=html5&logoColor=white" /> <img src="https://img.shields.io/badge/TailWindCSS-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white" /> <img src="https://img.shields.io/badge/React.js-61DAFB?style=for-the-badge&logo=react&logoColor=white" /> <img src="https://img.shields.io/badge/Vite-646CFF?style=for-the-badge&logo=vite&logoColor=white" />
-<p>
+  <img src="https://img.shields.io/badge/HTML5-EF642D?style=for-the-badge&logo=html5&logoColor=white" />
+  <img src="https://img.shields.io/badge/TailwindCSS-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white" />
+  <img src="https://img.shields.io/badge/React.js-61DAFB?style=for-the-badge&logo=react&logoColor=white" />
+  <img src="https://img.shields.io/badge/Vite-646CFF?style=for-the-badge&logo=vite&logoColor=white" />
+</p>
+
+### バックエンド / Backend
 <p align="left">
-<バックエンド / Backend> <img src="https://img.shields.io/badge/Ruby on Rails-D30001?style=for-the-badge&logo=rubyonrails&logoColor=white" />
-<p>
+  <img src="https://img.shields.io/badge/Ruby_on_Rails-D30001?style=for-the-badge&logo=rubyonrails&logoColor=white" />
+</p>
+
+### インフラ・デプロイ / Infrastructure & Deployment
 <p align="left">
-<デプロイ / deploy on> <img src="https://img.shields.io/badge/vercel-000000?style=for-the-badge&logo=vercel&logoColor=white" /> <img src="https://img.shields.io/badge/render-000000?style=for-the-badge&logo=render&logoColor=white" /> <img src="https://img.shields.io/badge/Neon-34D59A?style=for-the-badge&logo=Neon&logoColor=white" /> 
-<p>
+  <img src="https://img.shields.io/badge/Vercel-000000?style=for-the-badge&logo=vercel&logoColor=white" />
+  <img src="https://img.shields.io/badge/Render-000000?style=for-the-badge&logo=render&logoColor=white" />
+  <img src="https://img.shields.io/badge/Neon-34D59A?style=for-the-badge&logo=neon&logoColor=white" />
+</p>
+
+### その他 / Others
 <p align="left">
-<その他 / others> <img src="https://img.shields.io/badge/docker-2496ED?style=for-the-badge&logo=docker&logoColor=white" /> <img src="https://img.shields.io/badge/github_actions-2088FF?style=for-the-badge&logo=githubactions&logoColor=white" />
-<p>
+  <img src="https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white" />
+  <img src="https://img.shields.io/badge/GitHub_Actions-2088FF?style=for-the-badge&logo=githubactions&logoColor=white" />
+</p>
+
+---
+
+## 🏛️ アーキテクチャ / Architecture
+
+```
+Browser
+  │
+  ▼
+Vercel (React + Vite)        ← フロントエンド / Frontend
+  │
+  │  REST API
+  ▼
+Render (Rails API mode)      ← バックエンド / Backend
+  │                │
+  │ GitHub OAuth   │ GitHub API
+  │                ▼
+  │           GitHub (commit data)
+  ▼
+Neon (PostgreSQL)            ← データベース / Database
+```
+
+---
+
+## 🔐 認証フロー / Auth Flow
+
+```
+1. ユーザーが「GitHubでログイン」をクリック
+   User clicks "Login with GitHub"
+        ↓
+2. GitHubの認証画面にリダイレクト
+   Redirected to GitHub OAuth screen
+        ↓
+3. 許可するとアクセストークンをRailsが受け取る
+   Rails receives the access token upon approval
+        ↓
+4. トークンを使って本人のリポジトリのみAPIアクセス
+   API access limited to the authenticated user's own repos
+```
+
+---
+
+## 🚀 開発環境のセットアップ / Local Development Setup
+
+```bash
+# リポジトリをクローン / Clone the repository
+git clone https://github.com/your-username/github-streak-app.git
+cd github-streak-app
+
+# Dockerで起動 / Start with Docker
+docker compose up --build
+```
+
+| サービス / Service | URL |
+|---|---|
+| フロントエンド / Frontend | http://localhost:5173 |
+| バックエンド / Backend | http://localhost:3000 |
+
+---
+
+## ⚠️ 注意事項 / Notes
+
+- バックエンド（Render無料プラン）は15分間無操作でスリープします。初回アクセス時に起動まで少し時間がかかる場合があります。
+- The backend (Render free plan) sleeps after 15 minutes of inactivity. Initial access may take a moment to wake up.
+- NeonはPooled Connectionを使用しています。マイグレーション時はダイレクト接続を使用してください。
+- Neon uses a Pooled Connection. Use a direct connection when running migrations.
+
+---
+
+## 📄 ライセンス / License
+
+MIT
+
+---
+Generated By Claude
