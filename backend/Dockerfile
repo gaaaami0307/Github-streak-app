@@ -4,7 +4,7 @@ ENV BUNDLE_PATH=/usr/local/bundle \
     BUNDLE_WITHOUT=production
 
 RUN apt-get update -qq \
-  && apt-get install -y --no-install-recommends build-essential libpq-dev git curl \
+  && apt-get install -y --no-install-recommends build-essential libpq-dev libyaml-dev git curl \
   && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
@@ -16,4 +16,5 @@ COPY . ./
 
 EXPOSE 3000
 
-CMD ["bundle", "exec", "rails", "server", "-b", "0.0.0.0", "-p", "3000"]
+CMD ["bundle", "exec", "ruby", "./bin/rails", "server", "-b", "0.0.0.0", "-p", "3000"]
+
