@@ -17,4 +17,10 @@ test:
 
 production:
   <<: *default
-  database: <%= ENV.fetch("DB_NAME", "github_streak_app_production") %>
+  # Use DATABASE_URL (pooled) in production. Set this in your hosting provider.
+  url: <%= ENV.fetch("DATABASE_URL") %>
+
+production_direct:
+  <<: *default
+  # Optional: direct connection string for migrations. If not set, falls back to DATABASE_URL.
+  url: <%= ENV.fetch("DIRECT_DATABASE_URL", ENV["DATABASE_URL"]) %>
