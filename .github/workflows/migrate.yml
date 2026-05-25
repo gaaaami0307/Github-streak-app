@@ -1,0 +1,42 @@
+name: Migrate production database
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: Type "migrate" to run the production database migration
+        required: true
+        default: migrate
+
+jobs:
+  migrate:
+    if: ${{ github.event.inputs.confirm == 'migrate' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    env:
+      RAILS_ENV: production
+      BUNDLE_WITHOUT: development:test
+      DATABASE_URL: ${{ secrets.NEON_DIRECT_DATABASE_URL }}
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      - name: Install PostgreSQL client libraries
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libpq-dev
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: 3.3.11
+
+      - name: Install gems
+        working-directory: backend
+        run: bundle install --jobs 4 --quiet
+
+      - name: Run database migration
+        working-directory: backend
+        run: bundle exec rails db:migrate
