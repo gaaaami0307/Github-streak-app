@@ -6,7 +6,6 @@ on:
       confirm:
         description: Type "migrate" to run the production database migration
         required: true
-        default: migrate
 
 jobs:
   migrate:
