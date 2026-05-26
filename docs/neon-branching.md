@@ -13,12 +13,7 @@
 - GitHub (Repository Secrets):
 	- Direct 用シークレットを追加（例: `NEON_STAGING_DIRECT_DATABASE_URL`）。
 	- 既存の workflow が `NEON_DIRECT_DATABASE_URL` を参照するなら同名で登録するか、workflow を新しいシークレット名に合わせて修正する。
-	- CLI 例:
 
-```bash
-gh secret set NEON_STAGING_DIRECT_DATABASE_URL --body "$NEON_DIRECT" --repo OWNER/REPO
-gh secret set NEON_STAGING_DATABASE_URL --body "$NEON_POOLED" --repo OWNER/REPO
-```
 3. GitHub Actions の manual workflow（`workflow_dispatch`）で Direct を `DATABASE_URL` に注入して `bundle exec rails db:migrate` を実行する。
 
 セキュリティ注意（短く）
