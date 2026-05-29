@@ -1,0 +1,92 @@
+name: Provision PR preview
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  provision:
+    runs-on: ubuntu-latest
+    env:
+      NEON_SERVICE_ID: ${{ vars.NEON_SERVICE_ID }}
+      RENDER_SERVICE_ID: ${{ vars.RENDER_SERVICE_ID }}
+
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+
+      - name: Prepare tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y jq curl
+
+      - name: Create Neon branch
+        id: neon
+        env:
+          NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
+        run: |
+          set -euo pipefail
+          BRANCH_NAME="pr-${{ github.event.number }}-${GITHUB_SHA::8}"
+          echo "Creating Neon branch: $BRANCH_NAME"
+          resp=$(curl -sS -X POST "https://api.neon.tech/v1/projects/${NEON_SERVICE_ID}/branches" \
+            -H "Authorization: Bearer $NEON_API_KEY" \
+            -H "Content-Type: application/json" \
+            -d "{\"name\":\"$BRANCH_NAME\"}")
+          pooled=$(echo "$resp" | jq -r '.pooled_connection_string // empty')
+          direct=$(echo "$resp" | jq -r '.direct_connection_string // empty')
+          if [ -z "$pooled" ] || [ -z "$direct" ]; then
+            echo "Failed to create branch or parse connection strings: $resp"
+            exit 1
+          fi
+          echo "pooled=$pooled" >> $GITHUB_OUTPUT
+          echo "direct=$direct" >> $GITHUB_OUTPUT
+          echo "branch=$BRANCH_NAME" >> $GITHUB_OUTPUT
+
+      - name: Inject DATABASE_URL into Render preview (private)
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+          RENDER_SERVICE_ID: ${{ vars.RENDER_SERVICE_ID }}
+        run: |
+          set -euo pipefail
+          pooled="${{ steps.neon.outputs.pooled }}"
+          echo "Setting private DATABASE_URL on Render service"
+          curl -sS -X POST "https://api.render.com/v1/services/$RENDER_SERVICE_ID/env" \
+            -H "Authorization: Bearer $RENDER_API_KEY" \
+            -H "Content-Type: application/json" \
+            -d "$(jq -n --arg name 'DATABASE_URL' --arg value "$pooled" '{name:$name, value:$value, private:true}')"
+
+      - name: Run migrations on PR DB (Direct)
+        env:
+          DATABASE_URL: ${{ steps.neon.outputs.direct }}
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: 3.3.11
+
+      - name: Install system deps and gems
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential libpq-dev libssl-dev
+          cd backend
+          bundle install --jobs 4 --retry 3
+
+      - name: Run db:migrate
+        working-directory: backend
+        run: |
+          echo "Running migrations against PR DB"
+          bundle exec rails db:migrate
+
+      - name: Comment on PR with preview info
+        if: success()
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const pr = context.payload.pull_request;
+            const branch = "${{ steps.neon.outputs.branch }}";
+            const body = `Preview DB created: ${branch}`;
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: pr.number,
+              body,
+            });
