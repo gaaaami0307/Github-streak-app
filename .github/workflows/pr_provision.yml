@@ -8,8 +8,8 @@ jobs:
   provision:
     runs-on: ubuntu-latest
     env:
-      NEON_SERVICE_ID: ${{ vars.NEON_SERVICE_ID }}
-      RENDER_SERVICE_ID: ${{ vars.RENDER_SERVICE_ID }}
+      NEON_SERVICE_ID: ${{ secrets.NEON_SERVICE_ID }}
+      RENDER_SERVICE_ID: ${{ secrets.RENDER_SERVICE_ID }}
 
     steps:
       - name: Check out
@@ -45,7 +45,7 @@ jobs:
       - name: Inject DATABASE_URL into Render preview (private)
         env:
           RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
-          RENDER_SERVICE_ID: ${{ vars.RENDER_SERVICE_ID }}
+          RENDER_SERVICE_ID: ${{ secrets.RENDER_SERVICE_ID }}
         run: |
           set -euo pipefail
           pooled="${{ steps.neon.outputs.pooled }}"

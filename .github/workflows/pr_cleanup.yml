@@ -8,8 +8,8 @@ jobs:
   cleanup:
     runs-on: ubuntu-latest
     env:
-      NEON_SERVICE_ID: ${{ vars.NEON_SERVICE_ID }}
-      RENDER_SERVICE_ID: ${{ vars.RENDER_SERVICE_ID }}
+      NEON_SERVICE_ID: ${{ secrets.NEON_SERVICE_ID }}
+      RENDER_SERVICE_ID: ${{ secrets.RENDER_SERVICE_ID }}
 
     steps:
       - name: Prepare tools
@@ -37,7 +37,7 @@ jobs:
           RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
         run: |
           set -euo pipefail
-          SERVICE=${{ vars.RENDER_SERVICE_ID }}
+          SERVICE=${{ secrets.RENDER_SERVICE_ID }}
           echo "Listing env vars for Render service $SERVICE"
           envs=$(curl -sS -H "Authorization: Bearer $RENDER_API_KEY" "https://api.render.com/v1/services/$SERVICE/env")
           echo "$envs" | jq -c '.[] | select(.name=="DATABASE_URL")' | while read -r item; do
