@@ -1,0 +1,61 @@
+name: Cleanup PR preview
+
+on:
+  pull_request:
+    types: [closed]
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    env:
+      NEON_SERVICE_ID: ${{ vars.NEON_SERVICE_ID }}
+      RENDER_SERVICE_ID: ${{ vars.RENDER_SERVICE_ID }}
+
+    steps:
+      - name: Prepare tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y jq curl
+
+      - name: Delete Neon branches for PR
+        env:
+          NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
+        run: |
+          set -euo pipefail
+          PR_NUM=${{ github.event.number }}
+          echo "Looking up branches for PR $PR_NUM"
+          resp=$(curl -sS -H "Authorization: Bearer $NEON_API_KEY" "https://api.neon.tech/v1/projects/${NEON_SERVICE_ID}/branches")
+          echo "$resp" | jq -c ".branches[] | select(.name | startswith(\"pr-$PR_NUM\"))" | while read -r b; do
+            name=$(echo "$b" | jq -r '.name')
+            echo "Deleting Neon branch: $name"
+            curl -sS -X DELETE "https://api.neon.tech/v1/projects/${NEON_SERVICE_ID}/branches/$name" \
+              -H "Authorization: Bearer $NEON_API_KEY"
+          done || true
+
+      - name: Remove Render preview env vars (DATABASE_URL)
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+        run: |
+          set -euo pipefail
+          SERVICE=${{ vars.RENDER_SERVICE_ID }}
+          echo "Listing env vars for Render service $SERVICE"
+          envs=$(curl -sS -H "Authorization: Bearer $RENDER_API_KEY" "https://api.render.com/v1/services/$SERVICE/env")
+          echo "$envs" | jq -c '.[] | select(.name=="DATABASE_URL")' | while read -r item; do
+            id=$(echo "$item" | jq -r '.id')
+            echo "Deleting Render env id: $id"
+            curl -sS -X DELETE "https://api.render.com/v1/services/$SERVICE/env/$id" \
+              -H "Authorization: Bearer $RENDER_API_KEY"
+          done || true
+
+      - name: Comment on PR cleanup
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const pr = context.payload.pull_request;
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: pr.number,
+              body: `Preview resources for PR #${pr.number} cleaned up.`,
+            });
