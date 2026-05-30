@@ -14,7 +14,7 @@ jobs:
     if: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
     runs-on: ubuntu-latest
     env:
-      NEON_PROJECT_ID: ${{ secrets.NEON_PROJECT_ID || secrets.NEON_SERVICE_ID }}
+      NEON_SERVICE_ID: ${{ secrets.NEON_SERVICE_ID }}
       RENDER_SERVICE_ID: ${{ secrets.RENDER_SERVICE_ID }}
 
     steps:
@@ -30,12 +30,12 @@ jobs:
           set -euo pipefail
           PR_NUM=${{ github.event.pull_request.number }}
           echo "Looking up branches for PR $PR_NUM"
-          resp=$(curl -sS --fail-with-body -H "Authorization: Bearer $NEON_API_KEY" "https://console.neon.tech/api/v2/projects/${NEON_PROJECT_ID}/branches")
+          resp=$(curl -sS --fail-with-body -H "Authorization: Bearer $NEON_API_KEY" "https://console.neon.tech/api/v2/projects/${NEON_SERVICE_ID}/branches")
           echo "$resp" | jq -c --arg pr "pr-$PR_NUM" '.branches // [] | .[] | select(.name | startswith($pr))' | while read -r b; do
             branch_id=$(echo "$b" | jq -r '.id')
             name=$(echo "$b" | jq -r '.name')
             echo "Deleting Neon branch: $name ($branch_id)"
-            curl -sS --fail-with-body -X DELETE "https://console.neon.tech/api/v2/projects/${NEON_PROJECT_ID}/branches/$branch_id" \
+            curl -sS --fail-with-body -X DELETE "https://console.neon.tech/api/v2/projects/${NEON_SERVICE_ID}/branches/$branch_id" \
               -H "Authorization: Bearer $NEON_API_KEY"
           done || true
 
