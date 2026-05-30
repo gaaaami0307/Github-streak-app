@@ -11,6 +11,7 @@ permissions:
 
 jobs:
   provision:
+    if: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
     runs-on: ubuntu-latest
     env:
       NEON_PROJECT_ID: ${{ secrets.NEON_PROJECT_ID || secrets.NEON_SERVICE_ID }}
