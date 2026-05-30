@@ -18,7 +18,7 @@ jobs:
       - name: Prepare tools
         run: |
           sudo apt-get update
-          sudo apt-get install -y jq curl
+          sudo apt-get install -y jq curl dnsutils
 
       - name: Create Neon branch
         id: neon
@@ -28,10 +28,25 @@ jobs:
           set -euo pipefail
           BRANCH_NAME="pr-${{ github.event.number }}-${GITHUB_SHA::8}"
           echo "Creating Neon branch: $BRANCH_NAME"
-          resp=$(curl -sS -X POST "https://api.neon.tech/v1/projects/${NEON_SERVICE_ID}/branches" \
+
+          # Diagnostic: check DNS resolution before the API call
+          echo "DNS lookup for api.neon.tech:" 
+          nslookup api.neon.tech || true
+
+          # curl with retries for transient network issues
+          CURL_OPTS=(--retry 5 --retry-delay 2 --retry-connrefused --connect-timeout 10 --max-time 30)
+
+          resp=$(curl -sS "${CURL_OPTS[@]}" -X POST "https://api.neon.tech/v1/projects/${NEON_SERVICE_ID}/branches" \
             -H "Authorization: Bearer $NEON_API_KEY" \
             -H "Content-Type: application/json" \
-            -d "{\"name\":\"$BRANCH_NAME\"}")
+            -d "{\"name\":\"$BRANCH_NAME\"}") || {
+            echo "Neon API request failed. Diagnostic follow-up:"
+            nslookup api.neon.tech || true
+            curl -v https://api.neon.tech/ || true
+            echo "response: $resp"
+            exit 1
+          }
+
           pooled=$(echo "$resp" | jq -r '.pooled_connection_string // empty')
           direct=$(echo "$resp" | jq -r '.direct_connection_string // empty')
           if [ -z "$pooled" ] || [ -z "$direct" ]; then
