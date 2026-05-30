@@ -32,7 +32,7 @@ jobs:
           NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
         run: |
           set -euo pipefail
-          BRANCH_NAME="pr-${{ github.event.number }}-${GITHUB_SHA::8}"
+          BRANCH_NAME="pr-${{ github.event.number }}"
           echo "Creating Neon branch: $BRANCH_NAME"
           resp=""
 
