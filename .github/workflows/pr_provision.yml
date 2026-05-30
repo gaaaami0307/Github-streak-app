@@ -62,8 +62,14 @@ jobs:
             -H "Authorization: Bearer $NEON_API_KEY" \
             -H "Accept: application/json")
 
-          pooled=$(echo "$pooled_resp" | jq -r '.uri // .connection_uri // .connection_string // empty')
-          direct=$(echo "$direct_resp" | jq -r '.uri // .connection_uri // .connection_string // empty')
+          pooled=$(echo "$pooled_resp" | jq -r '.uri // .connection_uri // .connection_string // empty' 2>/dev/null || true)
+          direct=$(echo "$direct_resp" | jq -r '.uri // .connection_uri // .connection_string // empty' 2>/dev/null || true)
+          if [ -z "$pooled" ]; then
+            pooled=$(printf '%s' "$pooled_resp" | tr -d '"')
+          fi
+          if [ -z "$direct" ]; then
+            direct=$(printf '%s' "$direct_resp" | tr -d '"')
+          fi
           if [ -z "$pooled" ] || [ -z "$direct" ]; then
             echo "Failed to get connection URIs. create_response=$resp pooled_response=$pooled_resp direct_response=$direct_resp"
             exit 1
