@@ -13,22 +13,23 @@
 - トリガー: `pull_request` (opened, synchronize, reopened)
 - 主な処理: Neon ブランチ作成 (API) → Render に private env 注入 (API) → PR 用 DB に対して `rails db:migrate` → PR にコメント
 - 必要な Secret/Vars:
-  - Secrets: `NEON_API_KEY`, `RENDER_API_KEY`, `GITHUB_TOKEN`（自動で提供可）
-  - Repository Variables: `NEON_PROJECT_ID`, `RENDER_SERVICE_ID`
+  - Secrets: `NEON_API_KEY`, `RENDER_API_KEY`, `NEON_PROJECT_ID`, `RENDER_SERVICE_ID`, `GITHUB_TOKEN`（自動で提供可）
+  - 補足: この PR の実装では、Neon / Render の ID も Secrets として扱う
 
 **`pr_cleanup.yml`** (.github/workflows/pr_cleanup.yml)
 - 目的: PR がクローズ／マージされたときに、PR 用に作成した Neon ブランチと Render のプレビュー用環境変数を削除してクリーンアップする。
 - トリガー: `pull_request` (closed)
 - 主な処理: Neon ブランチ列挙・削除 → Render の `DATABASE_URL` 等の env 削除 → PR にコメント
 - 必要な Secret/Vars:
-  - Secrets: `NEON_API_KEY`, `RENDER_API_KEY`, `GITHUB_TOKEN`
-  - Repository Variables: `NEON_PROJECT_ID`, `RENDER_SERVICE_ID`
+  - Secrets: `NEON_API_KEY`, `RENDER_API_KEY`, `NEON_PROJECT_ID`, `RENDER_SERVICE_ID`, `GITHUB_TOKEN`
+  - 補足: この PR の実装では、Neon / Render の ID も Secrets として扱う
 
 ---
 
 運用上の注意（短く）
 - Secrets は決してログに出力しないでください（`echo` で出力しない、`set -x` を有効にしない）。
-- 各ワークフローを利用する前に、必要な Repository Secrets と Repository Variables を設定してください。
+- 各ワークフローを利用する前に、必要な Repository Secrets を設定してください。
+- `NEON_PROJECT_ID` と `RENDER_SERVICE_ID` も Repository Secrets に置く前提です。
 - PR の多重実行に備えて idempotency を確保する（既存ブランチの再利用や存在チェック）ことを検討してください。
 - Render / Neon の API のレスポンスフィールド名やエンドポイントが変更されることがあります。実行時のレスポンスに合わせてワークフローを調整してください。
 
