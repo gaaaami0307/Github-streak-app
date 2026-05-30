@@ -27,6 +27,7 @@
 ---
 
 運用上の注意（短く）
+- `pull_request` トリガーではフォーク PR に Repository Secrets が提供されないため、フォークからの PR では `pr_provision.yml` / `pr_cleanup.yml` は動作しません。
 - Secrets は決してログに出力しないでください（`echo` で出力しない、`set -x` を有効にしない）。
 - 各ワークフローを利用する前に、必要な Repository Secrets を設定してください。
 - `NEON_PROJECT_ID` と `RENDER_SERVICE_ID` も Repository Secrets に置く前提です。
