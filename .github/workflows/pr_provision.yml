@@ -50,7 +50,7 @@ jobs:
             echo "Neon API request failed. Diagnostic follow-up:"
             nslookup console.neon.tech || true
             curl -v https://console.neon.tech/ || true
-            echo "response: ${resp:-}"
+            echo "Neon API response body was omitted to avoid leaking secrets."
             exit 1
           fi
 
@@ -58,8 +58,9 @@ jobs:
           db_name=$(echo "$resp" | jq -r '.databases[0].name // empty')
           role_name=$(echo "$resp" | jq -r '.roles[0].name // empty')
           if [ -z "$branch_id" ] || [ -z "$db_name" ] || [ -z "$role_name" ]; then
-            echo "Failed to parse branch/database/role from response: $resp"
+            echo "Failed to parse branch/database/role from Neon response (response omitted to avoid leaking secrets)."
             exit 1
+          fi
           fi
 
           pooled_resp=$(curl -sS "${CURL_OPTS[@]}" -X GET "https://console.neon.tech/api/v2/projects/${NEON_SERVICE_ID}/connection_uri?branch_id=${branch_id}&database_name=${db_name}&role_name=${role_name}&pooled=true" \
@@ -105,7 +106,7 @@ jobs:
           set -euo pipefail
           pooled="${{ steps.neon.outputs.pooled }}"
           echo "Setting private DATABASE_URL on Render service"
-          curl -sS --fail-with-body -X PUT "https://api.render.com/v1/services/$RENDER_SERVICE_ID/env-vars/DATABASE_URL" \
+          curl -sS --fail-with-body -o /dev/null -X PUT "https://api.render.com/v1/services/$RENDER_SERVICE_ID/env-vars/DATABASE_URL" \
             -H "Authorization: Bearer $RENDER_API_KEY" \
             -H "Content-Type: application/json" \
             -d "$(jq -n --arg value "$pooled" '{value:$value}')"
