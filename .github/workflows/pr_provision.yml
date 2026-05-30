@@ -36,13 +36,13 @@ jobs:
           # curl with retries for transient network issues
           CURL_OPTS=(--retry 5 --retry-delay 2 --retry-connrefused --connect-timeout 10 --max-time 30)
 
-          resp=$(curl -sS "${CURL_OPTS[@]}" -X POST "https://api.neon.tech/v1/projects/${NEON_SERVICE_ID}/branches" \
+          resp=$(curl -sS "${CURL_OPTS[@]}" -X POST "https://console.neon.tech/api/v2/projects/${NEON_SERVICE_ID}/branches" \
             -H "Authorization: Bearer $NEON_API_KEY" \
             -H "Content-Type: application/json" \
             -d "{\"name\":\"$BRANCH_NAME\"}") || {
             echo "Neon API request failed. Diagnostic follow-up:"
-            nslookup api.neon.tech || true
-            curl -v https://api.neon.tech/ || true
+            nslookup console.neon.tech || true
+            curl -v https://console.neon.tech/ || true
             echo "response: $resp"
             exit 1
           }
