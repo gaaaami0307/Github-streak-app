@@ -106,7 +106,7 @@ jobs:
           set -euo pipefail
           pooled="${{ steps.neon.outputs.pooled }}"
           echo "Setting private DATABASE_URL on Render service"
-          curl -sS --fail-with-body -X PUT "https://api.render.com/v1/services/$RENDER_SERVICE_ID/env-vars/DATABASE_URL" \
+          curl -sS --fail-with-body -o /dev/null -X PUT "https://api.render.com/v1/services/$RENDER_SERVICE_ID/env-vars/DATABASE_URL" \
             -H "Authorization: Bearer $RENDER_API_KEY" \
             -H "Content-Type: application/json" \
             -d "$(jq -n --arg value "$pooled" '{value:$value}')"
