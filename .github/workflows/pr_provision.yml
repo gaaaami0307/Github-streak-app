@@ -34,24 +34,25 @@ jobs:
           set -euo pipefail
           BRANCH_NAME="pr-${{ github.event.number }}-${GITHUB_SHA::8}"
           echo "Creating Neon branch: $BRANCH_NAME"
+          resp=""
 
           # Diagnostic: check DNS resolution before the API call
           echo "DNS lookup for console.neon.tech:"
           nslookup console.neon.tech || true
 
           # curl with retries for transient network issues
-          CURL_OPTS=(--retry 5 --retry-delay 2 --retry-connrefused --connect-timeout 10 --max-time 30)
+          CURL_OPTS=(--retry 5 --retry-delay 2 --retry-connrefused --connect-timeout 10 --max-time 30 --fail-with-body)
 
-          resp=$(curl -sS "${CURL_OPTS[@]}" -X POST "https://console.neon.tech/api/v2/projects/${NEON_PROJECT_ID}/branches" \
+          if ! resp=$(curl -sS "${CURL_OPTS[@]}" -X POST "https://console.neon.tech/api/v2/projects/${NEON_PROJECT_ID}/branches" \
             -H "Authorization: Bearer $NEON_API_KEY" \
             -H "Content-Type: application/json" \
-            -d "{\"branch\":{\"name\":\"$BRANCH_NAME\"},\"endpoints\":[{\"type\":\"read_write\"}]}") || {
+            -d "{\"branch\":{\"name\":\"$BRANCH_NAME\"},\"endpoints\":[{\"type\":\"read_write\"}]}"); then
             echo "Neon API request failed. Diagnostic follow-up:"
             nslookup console.neon.tech || true
             curl -v https://console.neon.tech/ || true
-            echo "response: $resp"
+            echo "response: ${resp:-}"
             exit 1
-          }
+          fi
 
           branch_id=$(echo "$resp" | jq -r '.branch.id // empty')
           db_name=$(echo "$resp" | jq -r '.databases[0].name // empty')
