@@ -50,7 +50,7 @@ jobs:
             echo "Neon API request failed. Diagnostic follow-up:"
             nslookup console.neon.tech || true
             curl -v https://console.neon.tech/ || true
-            echo "response: ${resp:-}"
+            echo "Neon API response body was omitted to avoid leaking secrets."
             exit 1
           fi
 
