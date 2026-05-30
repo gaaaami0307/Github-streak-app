@@ -78,9 +78,11 @@ jobs:
             direct=$(printf '%s' "$direct_resp" | tr -d '"')
           fi
           if [ -z "$pooled" ] || [ -z "$direct" ]; then
-            echo "Failed to get connection URIs. create_response=$resp pooled_response=$pooled_resp direct_response=$direct_resp"
+            echo "Failed to get connection URIs for branch_id=$branch_id database_name=$db_name role_name=$role_name"
             exit 1
           fi
+          echo "::add-mask::$pooled"
+          echo "::add-mask::$direct"
           echo "pooled=$pooled" >> $GITHUB_OUTPUT
           echo "direct=$direct" >> $GITHUB_OUTPUT
           echo "branch=$BRANCH_NAME" >> $GITHUB_OUTPUT
