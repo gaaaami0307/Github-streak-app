@@ -14,7 +14,7 @@ jobs:
     if: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
     runs-on: ubuntu-latest
     env:
-      NEON_PROJECT_ID: ${{ secrets.NEON_PROJECT_ID || secrets.NEON_SERVICE_ID }}
+      NEON_SERVICE_ID: ${{ secrets.NEON_SERVICE_ID }}
       RENDER_SERVICE_ID: ${{ secrets.RENDER_SERVICE_ID }}
 
     steps:
@@ -43,7 +43,7 @@ jobs:
           # curl with retries for transient network issues
           CURL_OPTS=(--retry 5 --retry-delay 2 --retry-connrefused --connect-timeout 10 --max-time 30 --fail-with-body)
 
-          if ! resp=$(curl -sS "${CURL_OPTS[@]}" -X POST "https://console.neon.tech/api/v2/projects/${NEON_PROJECT_ID}/branches" \
+          if ! resp=$(curl -sS "${CURL_OPTS[@]}" -X POST "https://console.neon.tech/api/v2/projects/${NEON_SERVICE_ID}/branches" \
             -H "Authorization: Bearer $NEON_API_KEY" \
             -H "Content-Type: application/json" \
             -d "{\"branch\":{\"name\":\"$BRANCH_NAME\"},\"endpoints\":[{\"type\":\"read_write\"}]}"); then
@@ -62,10 +62,10 @@ jobs:
             exit 1
           fi
 
-          pooled_resp=$(curl -sS "${CURL_OPTS[@]}" -X GET "https://console.neon.tech/api/v2/projects/${NEON_PROJECT_ID}/connection_uri?branch_id=${branch_id}&database_name=${db_name}&role_name=${role_name}&pooled=true" \
+          pooled_resp=$(curl -sS "${CURL_OPTS[@]}" -X GET "https://console.neon.tech/api/v2/projects/${NEON_SERVICE_ID}/connection_uri?branch_id=${branch_id}&database_name=${db_name}&role_name=${role_name}&pooled=true" \
             -H "Authorization: Bearer $NEON_API_KEY" \
             -H "Accept: application/json")
-          direct_resp=$(curl -sS "${CURL_OPTS[@]}" -X GET "https://console.neon.tech/api/v2/projects/${NEON_PROJECT_ID}/connection_uri?branch_id=${branch_id}&database_name=${db_name}&role_name=${role_name}" \
+          direct_resp=$(curl -sS "${CURL_OPTS[@]}" -X GET "https://console.neon.tech/api/v2/projects/${NEON_SERVICE_ID}/connection_uri?branch_id=${branch_id}&database_name=${db_name}&role_name=${role_name}" \
             -H "Authorization: Bearer $NEON_API_KEY" \
             -H "Accept: application/json")
 

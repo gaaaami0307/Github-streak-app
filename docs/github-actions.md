@@ -1,4 +1,4 @@
-７# GitHub Actions ワークフロー概要
+GitHub Actions ワークフロー概要
 
 このファイルはリポジトリ内にある主要な GitHub Actions ワークフローの短い概要をまとめたものです。
 
