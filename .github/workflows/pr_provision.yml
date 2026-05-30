@@ -58,8 +58,9 @@ jobs:
           db_name=$(echo "$resp" | jq -r '.databases[0].name // empty')
           role_name=$(echo "$resp" | jq -r '.roles[0].name // empty')
           if [ -z "$branch_id" ] || [ -z "$db_name" ] || [ -z "$role_name" ]; then
-            echo "Failed to parse branch/database/role from response: $resp"
+            echo "Failed to parse branch/database/role from Neon response (response omitted to avoid leaking secrets)."
             exit 1
+          fi
           fi
 
           pooled_resp=$(curl -sS "${CURL_OPTS[@]}" -X GET "https://console.neon.tech/api/v2/projects/${NEON_SERVICE_ID}/connection_uri?branch_id=${branch_id}&database_name=${db_name}&role_name=${role_name}&pooled=true" \
