@@ -83,10 +83,20 @@ jobs:
           fi
           echo "::add-mask::$pooled"
           echo "::add-mask::$direct"
-          echo "pooled=$pooled" >> $GITHUB_OUTPUT
-          echo "direct=$direct" >> $GITHUB_OUTPUT
-          echo "branch=$BRANCH_NAME" >> $GITHUB_OUTPUT
-          echo "branch_id=$branch_id" >> $GITHUB_OUTPUT
+          {
+            echo "pooled<<EOF"
+            printf '%s\n' "$pooled"
+            echo "EOF"
+            echo "direct<<EOF"
+            printf '%s\n' "$direct"
+            echo "EOF"
+            echo "branch<<EOF"
+            printf '%s\n' "$BRANCH_NAME"
+            echo "EOF"
+            echo "branch_id<<EOF"
+            printf '%s\n' "$branch_id"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
 
       - name: Inject DATABASE_URL into Render preview (private)
         env:
