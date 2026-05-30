@@ -8,7 +8,7 @@ jobs:
   provision:
     runs-on: ubuntu-latest
     env:
-      NEON_SERVICE_ID: ${{ secrets.NEON_SERVICE_ID }}
+      NEON_PROJECT_ID: ${{ secrets.NEON_PROJECT_ID || secrets.NEON_SERVICE_ID }}
       RENDER_SERVICE_ID: ${{ secrets.RENDER_SERVICE_ID }}
 
     steps:
@@ -30,16 +30,16 @@ jobs:
           echo "Creating Neon branch: $BRANCH_NAME"
 
           # Diagnostic: check DNS resolution before the API call
-          echo "DNS lookup for api.neon.tech:" 
-          nslookup api.neon.tech || true
+          echo "DNS lookup for console.neon.tech:"
+          nslookup console.neon.tech || true
 
           # curl with retries for transient network issues
           CURL_OPTS=(--retry 5 --retry-delay 2 --retry-connrefused --connect-timeout 10 --max-time 30)
 
-          resp=$(curl -sS "${CURL_OPTS[@]}" -X POST "https://console.neon.tech/api/v2/projects/${NEON_SERVICE_ID}/branches" \
+          resp=$(curl -sS "${CURL_OPTS[@]}" -X POST "https://console.neon.tech/api/v2/projects/${NEON_PROJECT_ID}/branches" \
             -H "Authorization: Bearer $NEON_API_KEY" \
             -H "Content-Type: application/json" \
-            -d "{\"name\":\"$BRANCH_NAME\"}") || {
+            -d "{\"branch\":{\"name\":\"$BRANCH_NAME\"},\"endpoints\":[{\"type\":\"read_write\"}]}") || {
             echo "Neon API request failed. Diagnostic follow-up:"
             nslookup console.neon.tech || true
             curl -v https://console.neon.tech/ || true
@@ -47,15 +47,31 @@ jobs:
             exit 1
           }
 
-          pooled=$(echo "$resp" | jq -r '.pooled_connection_string // empty')
-          direct=$(echo "$resp" | jq -r '.direct_connection_string // empty')
+          branch_id=$(echo "$resp" | jq -r '.branch.id // empty')
+          db_name=$(echo "$resp" | jq -r '.databases[0].name // empty')
+          role_name=$(echo "$resp" | jq -r '.roles[0].name // empty')
+          if [ -z "$branch_id" ] || [ -z "$db_name" ] || [ -z "$role_name" ]; then
+            echo "Failed to parse branch/database/role from response: $resp"
+            exit 1
+          fi
+
+          pooled_resp=$(curl -sS "${CURL_OPTS[@]}" -X GET "https://console.neon.tech/api/v2/projects/${NEON_PROJECT_ID}/connection_uri?branch_id=${branch_id}&database_name=${db_name}&role_name=${role_name}&pooled=true" \
+            -H "Authorization: Bearer $NEON_API_KEY" \
+            -H "Accept: application/json")
+          direct_resp=$(curl -sS "${CURL_OPTS[@]}" -X GET "https://console.neon.tech/api/v2/projects/${NEON_PROJECT_ID}/connection_uri?branch_id=${branch_id}&database_name=${db_name}&role_name=${role_name}" \
+            -H "Authorization: Bearer $NEON_API_KEY" \
+            -H "Accept: application/json")
+
+          pooled=$(echo "$pooled_resp" | jq -r '.uri // .connection_uri // .connection_string // empty')
+          direct=$(echo "$direct_resp" | jq -r '.uri // .connection_uri // .connection_string // empty')
           if [ -z "$pooled" ] || [ -z "$direct" ]; then
-            echo "Failed to create branch or parse connection strings: $resp"
+            echo "Failed to get connection URIs. create_response=$resp pooled_response=$pooled_resp direct_response=$direct_resp"
             exit 1
           fi
           echo "pooled=$pooled" >> $GITHUB_OUTPUT
           echo "direct=$direct" >> $GITHUB_OUTPUT
           echo "branch=$BRANCH_NAME" >> $GITHUB_OUTPUT
+          echo "branch_id=$branch_id" >> $GITHUB_OUTPUT
 
       - name: Inject DATABASE_URL into Render preview (private)
         env:
