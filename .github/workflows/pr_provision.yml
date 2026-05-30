@@ -91,7 +91,6 @@ jobs:
       - name: Inject DATABASE_URL into Render preview (private)
         env:
           RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
-          RENDER_SERVICE_ID: ${{ secrets.RENDER_SERVICE_ID }}
         run: |
           set -euo pipefail
           pooled="${{ steps.neon.outputs.pooled }}"
