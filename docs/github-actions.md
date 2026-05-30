@@ -1,4 +1,4 @@
-# GitHub Actions ワークフロー概要
+７# GitHub Actions ワークフロー概要
 
 このファイルはリポジトリ内にある主要な GitHub Actions ワークフローの短い概要をまとめたものです。
 
@@ -6,13 +6,13 @@
 - 目的: 手動で本番（または direct 接続）のマイグレーションを実行する。
 - トリガー: `workflow_dispatch`（`confirm` 入力で実行制御）
 - 主な処理: `bundle install` → `rails db:migrate`
-- 必要な Secret/Vars: `NEON_DIRECT_DATABASE_URL`（Repository Secret）
+- 必要な Secrets: `NEON_DIRECT_DATABASE_URL`（Repository Secret）
 
 **`pr_provision.yml`** (.github/workflows/pr_provision.yml)
 - 目的: PR が作成・更新されたときにプレビュー用の DB（Neon ブランチ）を作り、Render のプレビュー環境へ private な `DATABASE_URL` を注入し、必要ならマイグレーションを実行する。
 - トリガー: `pull_request` (opened, synchronize, reopened)
 - 主な処理: Neon ブランチ作成 (API) → Render に private env 注入 (API) → PR 用 DB に対して `rails db:migrate` → PR にコメント
-- 必要な Secret/Vars:
+- 必要な Secrets:
   - Secrets: `NEON_API_KEY`, `RENDER_API_KEY`, `NEON_PROJECT_ID`, `RENDER_SERVICE_ID`, `GITHUB_TOKEN`（自動で提供可）
   - 補足: この PR の実装では、Neon / Render の ID も Secrets として扱う
 
@@ -20,7 +20,7 @@
 - 目的: PR がクローズ／マージされたときに、PR 用に作成した Neon ブランチと Render のプレビュー用環境変数を削除してクリーンアップする。
 - トリガー: `pull_request` (closed)
 - 主な処理: Neon ブランチ列挙・削除 → Render の `DATABASE_URL` 等の env 削除 → PR にコメント
-- 必要な Secret/Vars:
+- 必要な Secrets:
   - Secrets: `NEON_API_KEY`, `RENDER_API_KEY`, `NEON_PROJECT_ID`, `RENDER_SERVICE_ID`, `GITHUB_TOKEN`
   - 補足: この PR の実装では、Neon / Render の ID も Secrets として扱う
 
