@@ -27,10 +27,10 @@ jobs:
           NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
         run: |
           set -euo pipefail
-          PR_NUM=${{ github.event.number }}
+          PR_NUM=${{ github.event.pull_request.number }}
           echo "Looking up branches for PR $PR_NUM"
           resp=$(curl -sS -H "Authorization: Bearer $NEON_API_KEY" "https://console.neon.tech/api/v2/projects/${NEON_PROJECT_ID}/branches")
-          echo "$resp" | jq -c ".branches[] | select(.name | startswith(\"pr-$PR_NUM\"))" | while read -r b; do
+          echo "$resp" | jq -c --arg pr "pr-$PR_NUM" '.branches // [] | .[] | select(.name | startswith($pr))' | while read -r b; do
             branch_id=$(echo "$b" | jq -r '.id')
             name=$(echo "$b" | jq -r '.name')
             echo "Deleting Neon branch: $name ($branch_id)"
@@ -46,7 +46,7 @@ jobs:
           SERVICE=${{ secrets.RENDER_SERVICE_ID }}
           echo "Listing env vars for Render service $SERVICE"
           envs=$(curl -sS -H "Authorization: Bearer $RENDER_API_KEY" "https://api.render.com/v1/services/$SERVICE/env")
-          echo "$envs" | jq -c '.[] | select(.name=="DATABASE_URL")' | while read -r item; do
+          echo "$envs" | jq -c '.[]? | select(.name=="DATABASE_URL")' | while read -r item; do
             id=$(echo "$item" | jq -r '.id')
             echo "Deleting Render env id: $id"
             curl -sS -X DELETE "https://api.render.com/v1/services/$SERVICE/env/$id" \
